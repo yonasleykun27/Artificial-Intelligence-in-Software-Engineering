@@ -4,6 +4,7 @@ Sentiment Analysis Tool
 Analyzes the sentiment of a given sentence using a public API.
 """
 
+import os
 import requests
 import sys
 
@@ -20,8 +21,14 @@ def analyze_sentiment(text):
     url = "https://api.text-processing.com/api/sentiment/"
     payload = {"text": text}
 
+    # Securely retrieve API key from environment variables
+    api_key = os.getenv("TEXT_PROCESSING_API_KEY")
+    headers = {}
+    if api_key:
+        headers["Authorization"] = f"Bearer {api_key}"
+
     try:
-        response = requests.post(url, data=payload)
+        response = requests.post(url, data=payload, headers=headers)
         response.raise_for_status() # Raises exception for 4xx/5xx status codes
         
         data = response.json()
@@ -35,6 +42,12 @@ def analyze_sentiment(text):
         else:
             return "neutral"
 
+    except requests.exceptions.Timeout as e:
+        print(f"Timeout Error: Request timed out - {e}", file=sys.stderr)
+        return None
+    except requests.exceptions.ConnectionError as e:
+        print(f"Connection Error: Could not connect to API - {e}", file=sys.stderr)
+        return None
     except requests.exceptions.HTTPError as e:
         print(f"HTTP Error: {e}", file=sys.stderr)
         return None
